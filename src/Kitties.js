@@ -6,8 +6,11 @@ import { TxButton } from './substrate-lib/components';
 
 import KittyCards from './KittyCards';
 
-const convertToKittyHash = entry =>
-  `0x${entry[0].toJSON().slice(-64)}`;
+// const convertToKittyHash = entry =>
+//   `0x${entry[0].toJSON().slice(-64)}`;
+
+const convertToKittyIndex = entry =>
+  entry[0].args.map((k) => k.toHuman())
 
 const constructKitty = (hash, { dna, price, gender, owner }) => ({
   id: hash,
@@ -21,7 +24,7 @@ export default function Kitties (props) {
   const { api, keyring } = useSubstrate();
   const { accountPair } = props;
 
-  const [kittyHashes, setKittyHashes] = useState([]);
+  const [kittyIndexs, setKittyIndexs] = useState([]);
   const [kitties, setKitties] = useState([]);
   const [status, setStatus] = useState('');
 
@@ -32,8 +35,8 @@ export default function Kitties (props) {
       unsub = await api.query.substrateKitties.kittyCnt(async cnt => {
         // Fetch all kitty keys
         const entries = await api.query.substrateKitties.kitties.entries();
-        const hashes = entries.map(convertToKittyHash);
-        setKittyHashes(hashes);
+        const indexs = entries.map(convertToKittyIndex);
+        setKittyIndexs(indexs);
       });
     };
 
@@ -48,9 +51,9 @@ export default function Kitties (props) {
     let unsub = null;
 
     const asyncFetch = async () => {
-      unsub = await api.query.substrateKitties.kitties.multi(kittyHashes, kitties => {
+      unsub = await api.query.substrateKitties.kitties.multi(kittyIndexs, kitties => {
         const kittyArr = kitties
-          .map((kitty, ind) => constructKitty(kittyHashes[ind], kitty.value));
+          .map((kitty, ind) => constructKitty(kittyIndexs[ind], kitty.value));
         setKitties(kittyArr);
       });
     };
@@ -63,7 +66,7 @@ export default function Kitties (props) {
     };
   };
 
-  useEffect(subscribeKitties, [api, kittyHashes]);
+  useEffect(subscribeKitties, [api, kittyIndexs]);
   useEffect(subscribeKittyCnt, [api, keyring]);
 
   return <Grid.Column width={16}>
